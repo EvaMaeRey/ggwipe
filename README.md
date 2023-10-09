@@ -93,17 +93,29 @@ mtcars %>%
   ggplot() + 
   aes(am, fill = factor(vs)) +
   geom_bar()
-```
-
-![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
-
-``` r
 
 last_plot_wipe() + 
   geom_bar(position = "fill")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
+<img src="README_files/figure-gfm/unnamed-chunk-2-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-2-2.png" width="49%" />
+
+``` r
+mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs)) +
+  geom_bar()
+
+last_plot_wipe() + 
+  aes(fill = NULL, 
+      y = vs) + 
+  geom_count()
+
+last_plot_wipe() 
+#> Error in plot$scales$clone(): attempt to apply non-function
+```
+
+<img src="README_files/figure-gfm/unnamed-chunk-3-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-3-2.png" width="49%" />
 
 ## You can specify the specific layer, with the `index = n` argument
 
@@ -114,17 +126,12 @@ ggplot(data = cars) +
   geom_point() + 
   geom_smooth()
 #> `geom_smooth()` using method = 'loess' and formula = 'y ~ x'
-```
-
-![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
-
-``` r
 
 last_plot_wipe(index = 1)  # removes rug
 #> `geom_smooth()` using method = 'loess' and formula = 'y ~ x'
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
+<img src="README_files/figure-gfm/unnamed-chunk-4-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-4-2.png" width="49%" />
 
 ## You can also use it for backtracking - removing the most recent layer with `last_plot_wipe_last()`.
 
@@ -137,28 +144,13 @@ ggplot(data = cars) +
   geom_point() + 
   geom_smooth()
 #> `geom_smooth()` using method = 'loess' and formula = 'y ~ x'
-```
 
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
-
-``` r
-
+last_plot_wipe_last()
+last_plot_wipe_last()
 last_plot_wipe_last()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
-
-``` r
-last_plot_wipe_last()
-```
-
-![](README_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
-
-``` r
-last_plot_wipe_last()
-```
-
-![](README_files/figure-gfm/unnamed-chunk-4-4.png)<!-- -->
+<img src="README_files/figure-gfm/unnamed-chunk-5-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-5-2.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-5-3.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-5-4.png" width="49%" />
 
 # Curious about implementation? Details about building these functions
 
@@ -173,7 +165,7 @@ p <- mtcars %>%
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 
@@ -182,7 +174,7 @@ p[[2]] <- NULL # removes all layers specification
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 ``` r
 
@@ -190,7 +182,7 @@ last_plot() +
   geom_bar(position = "fill")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
 
 # Step 0.b removing a specific layer.
 
@@ -205,7 +197,7 @@ p <- mtcars %>%
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 
@@ -214,7 +206,7 @@ p[[2]][[2]] <- NULL # removes second layer specification
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
 # put it in a function: `last_plot_wipe`
 
@@ -249,7 +241,7 @@ mtcars %>%
   geom_bar()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 
@@ -257,7 +249,7 @@ last_plot_wipe() +
   geom_bar(position = "fill")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 ``` r
 
@@ -270,14 +262,14 @@ mtcars %>%
   stat_count(geom = "label", aes(label = after_stat(count)))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
 
 ``` r
 
 last_plot_wipe(index = 2)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
 
 # A convenience function, last\_plot\_wipe\_last
 
@@ -316,14 +308,14 @@ mtcars %>%
   stat_count(geom = "label", aes(label = after_stat(count)))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 
 last_plot_wipe_last()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
 
 # Other work
 
@@ -348,10 +340,11 @@ new layer in one step.
 knitr::knit_code$get() |> names()
 #>  [1] "unnamed-chunk-1"     "unnamed-chunk-2"     "unnamed-chunk-3"    
 #>  [4] "unnamed-chunk-4"     "unnamed-chunk-5"     "unnamed-chunk-6"    
-#>  [7] "last_plot_wipe"      "unnamed-chunk-7"     "last_plot_wipe_last"
-#> [10] "unnamed-chunk-8"     "unnamed-chunk-9"     "unnamed-chunk-10"   
+#>  [7] "unnamed-chunk-7"     "last_plot_wipe"      "unnamed-chunk-8"    
+#> [10] "last_plot_wipe_last" "unnamed-chunk-9"     "unnamed-chunk-10"   
 #> [13] "unnamed-chunk-11"    "unnamed-chunk-12"    "unnamed-chunk-13"   
-#> [16] "unnamed-chunk-14"    "unnamed-chunk-15"    "unnamed-chunk-16"
+#> [16] "unnamed-chunk-14"    "unnamed-chunk-15"    "unnamed-chunk-16"   
+#> [19] "unnamed-chunk-17"
 ```
 
 ``` r

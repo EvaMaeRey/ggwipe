@@ -28,7 +28,7 @@ ggwipe::last_plot_wipe() lets you remove all layers or specified layers from the
 
 There are other approaches to this problem which I summarize in the other work section.  The difference between ggwipe::last_plot_wipe() and these approaches is that last_plot_wipe doesn't require you to save out your plot as an object.  Instead it favors a more exploratory work flow, so uses ggplot2::last_plot() retrieve the last plot, modifies it by removing layers as specified, before it's returned back to the user for presentation or further manipulation. 
 
-```{r}
+```{r, out.width="49%", fig.show="hold", error = T}
 library(tidyverse, warn.conflicts = F)
 library(ggwipe)
 mtcars %>% 
@@ -40,9 +40,25 @@ last_plot_wipe() +
   geom_bar(position = "fill")
 ```
 
+```{r, out.width="49%", fig.show="hold", error = T}
+mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs)) +
+  geom_bar()
+
+last_plot_wipe() + 
+  aes(fill = NULL, 
+      y = vs) + 
+  geom_count()
+
+last_plot_wipe() 
+
+
+```
+
 ## You can specify the specific layer, with the `index = n` argument
 
-```{r}
+```{r, out.width="49%", fig.show="hold"}
 ggplot(data = cars) + 
   aes(x = speed, y = dist) + 
   geom_rug() + 
@@ -57,7 +73,7 @@ last_plot_wipe(index = 1)  # removes rug
 
 This function automatically detects the last layer.
 
-```{r, eval=T}
+```{r, out.width="49%", fig.show="hold"}
 ggplot(data = cars) + 
   aes(x = speed, y = dist) + 
   geom_rug() + 
