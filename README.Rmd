@@ -1,0 +1,323 @@
+---
+output: 
+  github_document:
+    toc: TRUE
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(tidyverse, warn.conflicts = F)
+ggplot2::theme_set(theme_gray(base_size = 18))
+```
+
+# {ggwipe}: print the last plot and remove stat/geom/annotate layers in one step 
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+In general ggplot2 lets you work in very fluid ways, including undoing your work.  For example facet_null() and aes(fill = NULL) are moves that allow you to 'undo' your faceting and fill decisions.  
+
+However, when it comes to layers, ggplot2 itself does not allow you to remove stat/geom/annotation layers dynamically.
+
+ggwipe::last_plot_wipe() lets you remove all layers or specified layers from the 'last plot'.  
+
+There are other approaches to this problem which I summarize in the other work section.  The difference between ggwipe::last_plot_wipe() and these approaches is that last_plot_wipe doesn't require you to save out your plot as an object.  Instead it favors a more exploratory work flow, so uses ggplot2::last_plot() retrieve the last plot, modifies it by removing layers as specified, before it's returned back to the user for presentation or further manipulation. 
+
+```{r}
+library(tidyverse, warn.conflicts = F)
+library(ggwipe)
+mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs)) +
+  geom_bar()
+
+last_plot_wipe() + 
+  geom_bar(position = "fill")
+```
+
+## You can specify the specific layer, with the `index = n` argument
+
+```{r}
+ggplot(data = cars) + 
+  aes(x = speed, y = dist) + 
+  geom_rug() + 
+  geom_point() + 
+  geom_smooth()
+
+last_plot_wipe(index = 1)  # removes rug
+```
+
+
+## You can also use it for backtracking - removing the most recent layer with `last_plot_wipe_last()`.
+
+This function automatically detects the last layer.
+
+```{r, eval=T}
+ggplot(data = cars) + 
+  aes(x = speed, y = dist) + 
+  geom_rug() + 
+  geom_point() + 
+  geom_smooth()
+
+last_plot_wipe_last()
+last_plot_wipe_last()
+last_plot_wipe_last()
+```
+
+
+
+# Curious about implementation? Details about building these functions
+
+# Step 0. Status quo, manually removing layers
+
+```{r}
+p <- mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs) ) +
+  geom_bar()
+
+p
+
+p[[2]] <- NULL # removes all layers specification
+
+p
+
+last_plot() + 
+  geom_bar(position = "fill")
+```
+
+
+# Step 0.b removing a specific layer.
+
+
+```{r}
+p <- mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs) ) +
+  geom_bar() + 
+  stat_count(geom = "point", size = 14) + 
+  stat_count(geom = "label", aes(label = after_stat(count)))
+
+p
+
+p[[2]][[2]] <- NULL # removes second layer specification
+
+p
+
+```
+
+# put it in a function: `last_plot_wipe`
+
+```{r last_plot_wipe}
+#' Title
+#'
+#' @param index 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+last_plot_wipe <- function(index = NULL){
+  
+  
+  p <- ggplot2::last_plot()
+  
+  # removes all layers specification
+  if(is.null(index)){ p[[2]] <- NULL }else{p[[2]][[index]] <- NULL}
+  
+  return(p)
+  
+}
+```
+
+
+## Try it out.
+
+```{r}
+mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs)) +
+  geom_bar()
+
+last_plot_wipe() + 
+  geom_bar(position = "fill")
+
+
+mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs) ) +
+  geom_bar() + 
+  stat_count(geom = "point", size = 14) + 
+  stat_count(geom = "label", aes(label = after_stat(count)))
+
+last_plot_wipe(index = 2)
+
+```
+
+# A convenience function, last_plot_wipe_last
+
+To only wipe the final layer
+
+```{r last_plot_wipe_last}
+#' Title
+#'
+#' @return
+#' @export
+#'
+#' @examples
+last_plot_wipe_last <- function(){
+  
+  
+  p <- ggplot2::last_plot()
+  
+  index <- length(p[[2]])
+  
+  # removes all layers specification
+  p[[2]][[index]] <- NULL
+  
+  return(p)
+  
+}
+```
+
+
+## Try it
+
+```{r}
+mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs) ) +
+  geom_bar() + 
+  stat_count(geom = "point", size = 14) + 
+  stat_count(geom = "label", aes(label = after_stat(count)))
+
+last_plot_wipe_last()
+```
+
+# Other work
+
+I think the difference is that other work would have you save the ggplot2 object and then manipulate it, where as ggwipe lends itself to printing the ggplot2 object and then retrieving and printing without a new layer in one step.  
+
+- gghost
+- pedro alpho
+- Jonathan Sidi
+
+
+```{r, eval = F, echo = F}
+knitr::knit_exit()
+```
+
+# Part 2. Packaging and documentation  🚧 ✅ 
+
+
+
+## minimal requirements for github package.  Have you:
+
+### Created files for package archetecture with `devtools::create("./ggbarlabs")` ✅ 
+
+### Moved functions R folder? ✅  
+
+```{r}
+knitr::knit_code$get() |> names()
+```
+
+
+```{r}
+readme2pkg::chunk_to_r(c("last_plot_wipe", 
+                         "last_plot_wipe_last"))
+```
+
+
+
+### Added roxygen skeleton? ✅ 
+
+ for auto documentation and making sure proposed functions are *exported*
+
+### Managed dependencies ? ✅ 
+
+package dependancies managed, i.e. `depend::function()` in proposed functions and declared in the DESCRIPTION
+
+```{r, eval = F}
+usethis::use_package("ggplot2")
+```
+
+
+### Chosen a license? ✅ 
+
+
+```{r, eval = F}
+usethis::use_mit_license()
+```
+
+### Run `devtools::check()` and addressed errors? 🚧 🚧 🚧 🚧 🚧 
+
+## Listen 🚧 
+
+### Consulted with technical experts 🚧 
+### Consulted with potential users 🚧 
+
+Getting started with that!
+
+## Polish.  Have you.
+
+### Settled on examples and put them in the roxygen skeleton? 🚧 
+
+### Written formal tests of functions? 🚧 
+
+
+### Sent tests in this readme to package via readme2pkg 🚧 
+
+That would look like this...
+
+```
+chunk_to_tests_testthat("test_geom_barlab_count")
+```
+
+
+### Have you worked added a description and author information in the DESCRIPTION file? 🚧 
+
+### Addressed *all* notes, warnings and errors. 🚧 
+
+## Promote
+
+### Package website built? 🚧 
+
+### Package website deployed? 🚧 
+
+## Harden
+
+### Submit to CRAN?  🚧 
+
+
+# Reports, Environment
+
+## Description file extract
+
+```{r}
+
+```
+
+## Environment
+
+Here I just want to print the packages and the versions
+
+```{r}
+all <- sessionInfo() |> print() |> capture.output()
+all[11:17]
+
+
+```
+
+## `devtools::check()` report
+
+```{r, error = T, eval = F}
+# rm(list = c("geom_barlab_count", "geom_barlab_count_percent"))
+devtools::check(pkg = ".")
+```
+
+
