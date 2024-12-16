@@ -9,24 +9,218 @@ output:
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  warning = F,
+  message = F
 )
 library(tidyverse, warn.conflicts = F)
 ggplot2::theme_set(theme_gray(base_size = 18))
 ```
+
+#
+https://evamaerey.github.io/mytidytuesday/2024-07-10-ggnewdata/ggnewdata.html
+
+```{r}
+library(tidyverse)
+ggplot(cars) + 
+  aes(dist, speed) + 
+  geom_point(size = 7) + 
+  aes(color = speed) + 
+  scale_color_viridis_c(limits = c(0,26)) + 
+  scale_x_continuous(limits = c(0,125)) +
+  scale_y_continuous(limits = c(0,25))
+```
+
+```{r}
+data_filter <- function(keep, .by) {
+  structure(list(keep_specification = rlang::enquo(keep), 
+                 by_specification = rlang::enquo(.by)), 
+            class = "wipeobs")
+}
+
+ggplot_add.wipeobs <- function(object, plot, object_name, .by) {
+  
+  new_data <- dplyr::filter(plot$data, 
+                            !! object$keep_specification, 
+                            .by = !! object$by_specification)
+  plot$data <- new_data
+  plot
+
+  }
+```
+
+
+```{r}
+last_plot() + 
+  data_filter(keep = dist > 60)
+
+tidytitanic::tidy_titanic |>
+  ggplot() + 
+  aes(x = sex) + 
+  geom_bar()
+
+last_plot() + 
+  data_filter(n() > 500, .by = sex)
+
+last_plot() + 
+  aes(fill = age) 
+
+last_plot() + 
+  data_filter(n() > 1000, .by = age)
+```
+
+
+
+```{r}
+ggplot(cars) + 
+  aes(dist, speed) + 
+  geom_point(size = 7) + 
+  aes(color = speed)
+
+data_replace <- function(data) {
+  structure(list(new_data_specification = data), 
+            class = "wipedata")
+}
+
+ggplot_add.wipedata <- function(object, plot, object_name) {
+  
+  plot$data <- object$new_data_specification
+  plot
+
+  }
+
+
+last_plot() + 
+  data_replace(data = cars %>% filter(dist > 50))
+
+
+drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
+
+
+
+drob_funs %>% 
+  ggplot() + 
+  aes(y = funs) + 
+  aes(y = fct_infreq(funs)) +
+  aes(y = fct_infreq(funs) %>% fct_rev()) +
+  geom_bar() ->
+p; p
+
+p + 
+  data_filter(n() > 500, 
+              .by = funs)
+
+p + 
+  data_filter(pkgs == "ggplot")
+
+
+
+drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
+
+data_mutate_filter <- function(.value, .by, keep) {
+  structure(list(sum_specification = rlang::enquo(.value),
+                 by_specification = rlang::enquo(.by),
+                 keep_specifiction = rlang::enquo(keep)),
+            class = "data_mutatefilter")
+  
+}
+
+ggplot_add.data_mutatefilter <- function(object, plot, object_name) {
+
+  
+  new_data <- dplyr::mutate(plot$data, .value =
+                            !! object$sum_specification, 
+                            .by = !! object$by_specification) %>% 
+    dplyr::filter(!! object$keep_specifiction)
+    message("New variable named '.value' created")
+
+  plot$data <- new_data
+  plot
+
+  
+  }
+
+
+
+
+drob_funs %>% 
+  ggplot() + 
+  aes(id = paste(funs, pkgs)) + 
+  ggcirclepack::geom_circlepack() + 
+  ggcirclepack::geom_circlepack_text(aes(label = funs)) + 
+  coord_equal() +
+  aes(fill = pkgs) + 
+  guides(fill = "none")
+
+last_plot() +
+  data_mutate_filter(.value = n(),       
+                     .by = c(funs, pkgs), 
+                     keep = .value >= 200) 
+
+
+ext_exports <- read_csv("https://raw.githubusercontent.com/EvaMaeRey/mytidytuesday/refs/heads/main/2024-11-19-gg-prefixes/exported_funs_exts_ggplot2_tidyverse_org.csv") %>% 
+  mutate(prefix = str_extract(fun_exported, ".*?_")) %>% 
+  mutate(prefix_long = str_extract(fun_exported, ".+_")) %>% 
+  mutate(ind_classic_prefix = prefix %in% c("stat_", "geom_", "theme_", "scale_", "coord_", "facet_"))
+
+ext_exports %>% 
+  ggplot() + 
+  aes(id = "All") + 
+  ggcirclepack::geom_circlepack() + 
+  ggcirclepack::geom_circlepack_text() + 
+  aes(label = after_stat(paste(id, "\n",area))) +
+  coord_equal() + 
+  aes(id = prefix) 
+
+last_plot() + 
+  aes(id = prefix_long) 
+
+last_plot() + 
+  data_filter(ind_classic_prefix) 
+
+last_plot() + 
+  aes(id = prefix)
+
+ext_exports %>% 
+  ggplot() + 
+  aes(id = user) + 
+  ggcirclepack::geom_circlepack() + 
+  ggcirclepack::geom_circlepack_text() +
+  aes(label = after_stat(paste(id, "\n",area))) +
+  coord_equal() + 
+  ggchalkboard::theme_chalkboard()
+
+last_plot() + 
+  data_filter(ind_classic_prefix) +
+  aes(fill = prefix)
+
+last_plot() +  
+  data_filter(n() > 50, .by = user) +
+  facet_wrap(~user) +
+  aes(id = prefix) + 
+  aes(fill = NULL) + 
+  ggchalkboard::theme_chalkboard(
+    base_theme = theme_gray
+  )
+
+```
+
+
 
 # {ggwipe}: print the last plot and remove stat/geom/annotate layers in one step 
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-In general ggplot2 lets you work in very fluid ways, including undoing your work.  For example facet_null() and aes(fill = NULL) are moves that allow you to 'undo' your faceting and fill decisions.  
+In general ggplot2 lets you work in very fluidly, including 'undoing' your work.  For example facet_null() and aes(fill = NULL) are moves that allow you to 'undo' your faceting and fill decisions.  
 
 However, when it comes to layers, ggplot2 itself does not allow you to remove stat/geom/annotation layers dynamically.
 
 ggwipe::last_plot_wipe() lets you remove all layers or specified layers from the 'last plot'.  
 
-There are other approaches to this problem which I summarize in the other work section.  The difference between ggwipe::last_plot_wipe() and these approaches is that last_plot_wipe doesn't require you to save out your plot as an object.  Instead it favors a more exploratory work flow, so uses ggplot2::last_plot() retrieve the last plot, modifies it by removing layers as specified, before it's returned back to the user for presentation or further manipulation. 
+There are other approaches to this problem which I summarize in the 'see also' section.  The difference between ggwipe::last_plot_wipe() and these approaches is that last_plot_wipe doesn't require you to save out your plot as an object.  Instead it favors a more exploratory work flow, so uses ggplot2::last_plot() retrieve the last plot, modifies it by removing layers as specified, before it's returned back to the user for presentation or further manipulation. 
+
+
 
 ```{r, out.width="49%", fig.show="hold", error = T}
 library(tidyverse, warn.conflicts = F)
@@ -34,25 +228,32 @@ library(ggwipe)
 mtcars %>% 
   ggplot() + 
   aes(am, fill = factor(vs)) +
-  geom_bar()
+  geom_bar() +
+  labs(tag = "Plot 1")
 
 last_plot_wipe() + 
-  geom_bar(position = "fill")
+  geom_bar(position = "fill") +
+  labs(tag = "Plot 2")
 ```
 
 ```{r, out.width="49%", fig.show="hold", error = T}
 mtcars %>% 
   ggplot() + 
-  aes(am, fill = factor(vs)) +
-  geom_bar()
+  aes(x = am, fill = factor(vs)) +
+  geom_bar() +
+  labs(tag = "Plot 3")
+
+last_plot()$layers
 
 last_plot_wipe() + 
-  aes(fill = NULL, 
-      y = vs) + 
-  geom_count()
+  aes(y = vs, fill = NULL) + 
+  geom_count() +
+  labs(tag = "Plot 4")
 
-last_plot_wipe() 
+last_plot()$layers
 
+last_plot_wipe() + 
+  geom_count(shape = 21)
 
 ```
 
@@ -61,7 +262,7 @@ last_plot_wipe()
 ```{r, out.width="49%", fig.show="hold"}
 ggplot(data = cars) + 
   aes(x = speed, y = dist) + 
-  geom_rug() + 
+  geom_rug() + # layer 1
   geom_point() + 
   geom_smooth()
 
@@ -89,9 +290,19 @@ last_plot_wipe_last()
 
 # Curious about implementation? Details about building these functions
 
-# Step 0. Status quo, manually removing layers
+# Step 0. Status quo, 'plot' w/ no layers, or manually removing layers
 
 ```{r}
+base_specifiction <- mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs) )
+
+base_specifiction + 
+  geom_bar() 
+
+base_specifiction +
+  geom_bar(position = "fill")
+
 p <- mtcars %>% 
   ggplot() + 
   aes(am, fill = factor(vs) ) +
@@ -99,12 +310,26 @@ p <- mtcars %>%
 
 p
 
-p[[2]] <- NULL # removes all layers specification
+p$layers
 
-p
+p$layers <- NULL # removes all layers specification
 
-last_plot() + 
+p$layers
+
+r <- p + 
   geom_bar(position = "fill")
+
+r$layers
+
+r
+
+q <- mtcars %>% 
+  ggplot() + 
+  aes(am, fill = factor(vs) ) +
+  geom_bar(position = "fill")
+
+q$layers
+
 ```
 
 
@@ -121,9 +346,10 @@ p <- mtcars %>%
 
 p
 
-p[[2]][[2]] <- NULL # removes second layer specification
+p$layers[[2]] <- NULL # removes second layer specification
 
 p
+
 
 ```
 
@@ -144,7 +370,7 @@ last_plot_wipe <- function(index = NULL){
   p <- ggplot2::last_plot()
   
   # removes all layers specification
-  if(is.null(index)){ p[[2]] <- NULL }else{p[[2]][[index]] <- NULL}
+  if(is.null(index)){ p$layers <- NULL }else{p$layers[[index]] <- NULL}
   
   return(p)
   
@@ -191,10 +417,10 @@ last_plot_wipe_last <- function(){
   
   p <- ggplot2::last_plot()
   
-  index <- length(p[[2]])
+  index <- length(p$layers)
   
   # removes all layers specification
-  p[[2]][[index]] <- NULL
+  p$layers[[index]] <- NULL
   
   return(p)
   
@@ -215,13 +441,16 @@ mtcars %>%
 last_plot_wipe_last()
 ```
 
+
+
+
 # Other work
 
 I think the difference is that other work would have you save the ggplot2 object and then manipulate it, where as ggwipe lends itself to printing the ggplot2 object and then retrieving and printing without a new layer in one step.  
 
-- gghost
+- gghost Jonathan Carroll
 - pedro alpho
-- Jonathan Sidi
+- Jonathan Sidi ggedit
 
 
 ```{r, eval = F, echo = F}
@@ -244,7 +473,7 @@ knitr::knit_code$get() |> names()
 
 
 ```{r}
-readme2pkg::chunk_to_r(c("last_plot_wipe", 
+knitrExtra:::chunk_to_r(c("last_plot_wipe", 
                          "last_plot_wipe_last"))
 ```
 
