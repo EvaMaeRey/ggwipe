@@ -156,8 +156,11 @@ last_plot() +
   data_mutate_filter(.value = n(),       
                      .by = c(funs, pkgs), 
                      keep = .value >= 200) 
+```
 
 
+
+```{r, fig.width=10, fig.height=10}
 ext_exports <- read_csv("https://raw.githubusercontent.com/EvaMaeRey/mytidytuesday/refs/heads/main/2024-11-19-gg-prefixes/exported_funs_exts_ggplot2_tidyverse_org.csv") %>% 
   mutate(prefix = str_extract(fun_exported, ".*?_")) %>% 
   mutate(prefix_long = str_extract(fun_exported, ".+_")) %>% 
@@ -188,21 +191,46 @@ ext_exports %>%
   ggcirclepack::geom_circlepack_text() +
   aes(label = after_stat(paste(id, "\n",area))) +
   coord_equal() + 
-  ggchalkboard::theme_chalkboard()
+  ggchalkboard::theme_chalkboard(base_size = 12) + 
+  theme(axis.text = element_blank()) + 
+  theme(axis.line = element_blank(),
+        axis.ticks = element_blank()) + 
+  guides(size = "none") +
+  labs(title = "Number of exported functions by author")
+
+(get_theme() + last_plot()$theme) |> theme_set()
 
 last_plot() + 
-  data_filter(ind_classic_prefix) +
-  aes(fill = prefix)
+  aes(id = prefix) + 
+  labs(title = "Number of exported functions by function prefix")
 
+
+last_plot() + 
+  data_filter(ind_classic_prefix) + 
+  aes(fill = prefix) + 
+  scale_fill_viridis_d() +
+  labs(subtitle = "Subsetting to only at classic extension points")
+
+last_plot() +
+  aes(id = user) + 
+  labs(title = "Number of exported functions by author and prefix") + 
+  theme(legend.position = "top") + 
+  labs(fill = NULL)
+```
+
+```{r fig.width=10, fig.height=10}
 last_plot() +  
-  data_filter(n() > 50, .by = user) +
+  data_filter(n() > 50, .by = user) + 
+  labs(subtitle = "Subsetting to only at classic extension points and productive authors of classic extension point functions") +
   facet_wrap(~user) +
   aes(id = prefix) + 
-  aes(fill = NULL) + 
-  ggchalkboard::theme_chalkboard(
-    base_theme = theme_gray
-  )
+  aes(fill = prefix) + 
+  theme(legend.position = "none")
 
+last_plot() + 
+  aes(group = paste0(repo, "::", fun_exported),
+      label = "") + 
+  theme(legend.position = "top")
 ```
 
 
