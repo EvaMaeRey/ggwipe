@@ -17,19 +17,12 @@ library(tidyverse, warn.conflicts = F)
 ggplot2::theme_set(theme_gray(base_size = 18))
 ```
 
-#
+# build functionality using the ggplot_add extension mechanism... 
+
+
 https://evamaerey.github.io/mytidytuesday/2024-07-10-ggnewdata/ggnewdata.html
 
-```{r}
-library(tidyverse)
-ggplot(cars) + 
-  aes(dist, speed) + 
-  geom_point(size = 7) + 
-  aes(color = speed) + 
-  scale_color_viridis_c(limits = c(0,26)) + 
-  scale_x_continuous(limits = c(0,125)) +
-  scale_y_continuous(limits = c(0,25))
-```
+
 
 ```{r}
 data_filter <- function(keep, .by) {
@@ -49,6 +42,16 @@ ggplot_add.wipeobs <- function(object, plot, object_name, .by) {
   }
 ```
 
+```{r}
+library(tidyverse)
+ggplot(cars) + 
+  aes(dist, speed) + 
+  geom_point(size = 7) + 
+  aes(color = speed) + 
+  scale_color_viridis_c(limits = c(0,26)) + 
+  scale_x_continuous(limits = c(0,125)) +
+  scale_y_continuous(limits = c(0,25))
+```
 
 ```{r}
 last_plot() + 
@@ -158,7 +161,7 @@ last_plot() +
                      keep = .value >= 200) 
 ```
 
-
+# explore extension exported functions...
 
 ```{r, fig.width=10, fig.height=10}
 ext_exports <- read_csv("https://raw.githubusercontent.com/EvaMaeRey/mytidytuesday/refs/heads/main/2024-11-19-gg-prefixes/exported_funs_exts_ggplot2_tidyverse_org.csv") %>% 
@@ -166,23 +169,6 @@ ext_exports <- read_csv("https://raw.githubusercontent.com/EvaMaeRey/mytidytuesd
   mutate(prefix_long = str_extract(fun_exported, ".+_")) %>% 
   mutate(ind_classic_prefix = prefix %in% c("stat_", "geom_", "theme_", "scale_", "coord_", "facet_"))
 
-ext_exports %>% 
-  ggplot() + 
-  aes(id = "All") + 
-  ggcirclepack::geom_circlepack() + 
-  ggcirclepack::geom_circlepack_text() + 
-  aes(label = after_stat(paste(id, "\n",area))) +
-  coord_equal() + 
-  aes(id = prefix) 
-
-last_plot() + 
-  aes(id = prefix_long) 
-
-last_plot() + 
-  data_filter(ind_classic_prefix) 
-
-last_plot() + 
-  aes(id = prefix)
 
 ext_exports %>% 
   ggplot() + 
@@ -207,21 +193,33 @@ last_plot() +
 
 last_plot() + 
   data_filter(ind_classic_prefix) + 
-  aes(fill = prefix) + 
-  scale_fill_viridis_d() +
   labs(subtitle = "Subsetting to only at classic extension points")
 
+last_plot() + 
+  aes(id = prefix_long) + 
+  labs(subtitle = "Subsetting to only classic extension points - number of functions by long prefix ...")
+  
+last_plot() + 
+  aes(id = prefix) + 
+  aes(fill = prefix) + 
+  theme(legend.position = "top") + 
+  theme(legend.justification = "left") +
+  scale_fill_viridis_d(end = .85) + 
+  labs(subtitle = "")
+  
+  
 last_plot() +
   aes(id = user) + 
-  labs(title = "Number of exported functions by author and prefix") + 
-  theme(legend.position = "top") + 
-  labs(fill = NULL)
+  labs(title = "Number of exported functions by author and prefix",
+       subtitle = "Subsetting to classic extension points") + 
+  labs(fill = NULL) + 
+  facet_wrap(~ prefix)
 ```
 
 ```{r fig.width=10, fig.height=10}
 last_plot() +  
   data_filter(n() > 50, .by = user) + 
-  labs(subtitle = "Subsetting to only at classic extension points and productive authors of classic extension point functions") +
+  labs(subtitle = "Subsetting to only at classic extension points and most productive authors of classic extension point functions") +
   facet_wrap(~user) +
   aes(id = prefix) + 
   aes(fill = prefix) + 

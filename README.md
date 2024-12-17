@@ -1,5 +1,8 @@
 
-- [](#section)
+- [build functionality using the ggplot_add extension
+  mechanism…](#build-functionality-using-the-ggplot_add-extension-mechanism)
+- [explore extension exported
+  functions…](#explore-extension-exported-functions)
 - [{ggwipe}: print the last plot and remove stat/geom/annotate layers in
   one
   step](#ggwipe-print-the-last-plot-and-remove-statgeomannotate-layers-in-one-step)
@@ -63,22 +66,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# 
+# build functionality using the ggplot_add extension mechanism…
 
 <https://evamaerey.github.io/mytidytuesday/2024-07-10-ggnewdata/ggnewdata.html>
-
-``` r
-library(tidyverse)
-ggplot(cars) + 
-  aes(dist, speed) + 
-  geom_point(size = 7) + 
-  aes(color = speed) + 
-  scale_color_viridis_c(limits = c(0,26)) + 
-  scale_x_continuous(limits = c(0,125)) +
-  scale_y_continuous(limits = c(0,25))
-```
-
-![](README_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ``` r
 data_filter <- function(keep, .by) {
@@ -97,6 +87,19 @@ ggplot_add.wipeobs <- function(object, plot, object_name, .by) {
 
   }
 ```
+
+``` r
+library(tidyverse)
+ggplot(cars) + 
+  aes(dist, speed) + 
+  geom_point(size = 7) + 
+  aes(color = speed) + 
+  scale_color_viridis_c(limits = c(0,26)) + 
+  scale_x_continuous(limits = c(0,125)) +
+  scale_y_continuous(limits = c(0,25))
+```
+
+![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ``` r
 last_plot() + 
@@ -258,49 +261,14 @@ last_plot() +
 
 ![](README_files/figure-gfm/unnamed-chunk-5-7.png)<!-- -->
 
+# explore extension exported functions…
+
 ``` r
 ext_exports <- read_csv("https://raw.githubusercontent.com/EvaMaeRey/mytidytuesday/refs/heads/main/2024-11-19-gg-prefixes/exported_funs_exts_ggplot2_tidyverse_org.csv") %>% 
   mutate(prefix = str_extract(fun_exported, ".*?_")) %>% 
   mutate(prefix_long = str_extract(fun_exported, ".+_")) %>% 
   mutate(ind_classic_prefix = prefix %in% c("stat_", "geom_", "theme_", "scale_", "coord_", "facet_"))
 
-ext_exports %>% 
-  ggplot() + 
-  aes(id = "All") + 
-  ggcirclepack::geom_circlepack() + 
-  ggcirclepack::geom_circlepack_text() + 
-  aes(label = after_stat(paste(id, "\n",area))) +
-  coord_equal() + 
-  aes(id = prefix) 
-```
-
-![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
-
-``` r
-
-last_plot() + 
-  aes(id = prefix_long) 
-```
-
-![](README_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
-
-``` r
-
-last_plot() + 
-  data_filter(ind_classic_prefix) 
-```
-
-![](README_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
-
-``` r
-
-last_plot() + 
-  aes(id = prefix)
-```
-
-![](README_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
-
-``` r
 
 ext_exports %>% 
   ggplot() + 
@@ -317,7 +285,7 @@ ext_exports %>%
   labs(title = "Number of exported functions by author")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-5.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 
@@ -328,35 +296,57 @@ last_plot() +
   labs(title = "Number of exported functions by function prefix")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-6.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 ``` r
 
 
 last_plot() + 
   data_filter(ind_classic_prefix) + 
-  aes(fill = prefix) + 
-  scale_fill_viridis_d() +
   labs(subtitle = "Subsetting to only at classic extension points")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-7.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
 
 ``` r
 
-last_plot() +
-  aes(id = user) + 
-  labs(title = "Number of exported functions by author and prefix") + 
-  theme(legend.position = "top") + 
-  labs(fill = NULL)
+last_plot() + 
+  aes(id = prefix_long) + 
+  labs(subtitle = "Subsetting to only classic extension points - number of functions by long prefix ...")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-8.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
+
+``` r
+  
+last_plot() + 
+  aes(id = prefix) + 
+  aes(fill = prefix) + 
+  theme(legend.position = "top") + 
+  theme(legend.justification = "left") +
+  scale_fill_viridis_d(end = .85) + 
+  labs(subtitle = "")
+```
+
+![](README_files/figure-gfm/unnamed-chunk-6-5.png)<!-- -->
+
+``` r
+  
+  
+last_plot() +
+  aes(id = user) + 
+  labs(title = "Number of exported functions by author and prefix",
+       subtitle = "Subsetting to classic extension points") + 
+  labs(fill = NULL) + 
+  facet_wrap(~ prefix)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-6-6.png)<!-- -->
 
 ``` r
 last_plot() +  
   data_filter(n() > 50, .by = user) + 
-  labs(subtitle = "Subsetting to only at classic extension points and productive authors of classic extension point functions") +
+  labs(subtitle = "Subsetting to only at classic extension points and most productive authors of classic extension point functions") +
   facet_wrap(~user) +
   aes(id = prefix) + 
   aes(fill = prefix) + 
