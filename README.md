@@ -230,8 +230,16 @@ ggplot_add.data_mutate <- function(object, plot, object_name) {
                             .by = !! object$by_specification)
   
     message("New variable named '.value' created")
+    
 
+    if(object$var_name %in% names(new_data)){
+      
+      new_data[,object$var_name] <- new_data$.value
+      
+      new_data <- new_data %>% select(-.value)
+    }else{
     names(new_data)[names(new_data) == ".value"] <- object$var_name
+    }
     
     
   plot$data <- new_data
@@ -239,36 +247,11 @@ ggplot_add.data_mutate <- function(object, plot, object_name) {
 
   
 }
-
-
-data_var_update <- function(.value, .by, var_name) {
-  structure(list(value_specification = rlang::enquo(.value),
-                 by_specification = rlang::enquo(.by),
-                 var_name_specification = var_name),
-            class = "data_var_update")
-  
-}
-
-ggplot_add.data_var_update <- function(object, plot, object_name) {
-
-  
-  new_data <- dplyr::mutate(plot$data, 
-                            .value = !! object$value_specification, 
-                            .by = !! object$by_specification)
-  
-  new_data[names(new_data) == object$var_name] <- new_data$.value
-    
-    
-  plot$data <- new_data
-  plot
-
-  
-  }
 
 
 drob_funs %>% 
   ggplot() + 
-  aes(id = paste(funs, pkgs)) + 
+  aes(id = paste(pkgs, funs)) + 
   ggcirclepack::geom_circlepack() + 
   ggcirclepack::geom_circlepack_text(aes(label = funs)) + 
   coord_equal() +
@@ -300,12 +283,40 @@ last_plot() +
 ``` r
 
 last_plot() +
-  data_var_update(.value = case_when(funs == "ggplot" ~ "hello!",
+  data_mutate(.value = case_when(funs == "ggplot" ~ "hello!",
                                      .default = funs), 
-                  var_name = "funs")
+              var_name = "funs")
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-5-9.png)<!-- -->
+
+``` r
+
+
+data_var_update <- function(.value, .by, var_name) {
+  structure(list(value_specification = rlang::enquo(.value),
+                 by_specification = rlang::enquo(.by),
+                 var_name_specification = var_name),
+            class = "data_var_update")
+  
+}
+
+ggplot_add.data_var_update <- function(object, plot, object_name) {
+
+  
+  new_data <- dplyr::mutate(plot$data, 
+                            .value = !! object$value_specification, 
+                            .by = !! object$by_specification)
+  
+  new_data[names(new_data) == object$var_name] <- new_data$.value
+    
+    
+  plot$data <- new_data
+  plot
+
+  
+  }
+```
 
 # explore extension exported functions…
 
@@ -332,7 +343,7 @@ ext_exports %>%
   labs(title = "Number of exported functions by author")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 
@@ -343,7 +354,7 @@ last_plot() +
   labs(title = "Number of exported functions by function prefix")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
 ``` r
 
@@ -353,7 +364,7 @@ last_plot() +
   labs(subtitle = "Subsetting to only at classic extension points")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
 
 ``` r
 
@@ -362,7 +373,7 @@ last_plot() +
   labs(subtitle = "Subsetting to only classic extension points - number of functions by long prefix ...")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
 
 ``` r
   
@@ -375,7 +386,7 @@ last_plot() +
   labs(subtitle = "")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-5.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-5.png)<!-- -->
 
 ``` r
   
@@ -388,7 +399,7 @@ last_plot() +
   facet_wrap(~ prefix)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-6.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-7-6.png)<!-- -->
 
 ``` r
 last_plot() +  
@@ -400,7 +411,7 @@ last_plot() +
   theme(legend.position = "none")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 
@@ -410,7 +421,7 @@ last_plot() +
   theme(legend.position = "top")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 # {ggwipe}: print the last plot and remove stat/geom/annotate layers in one step
 
@@ -449,7 +460,7 @@ last_plot_wipe() +
   labs(tag = "Plot 2")
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-8-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-8-2.png" width="49%" />
+<img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="49%" />
 
 ``` r
 mtcars %>% 
@@ -486,7 +497,7 @@ last_plot_wipe() +
 #> Error in plot$scales$clone(): attempt to apply non-function
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="49%" />
+<img src="README_files/figure-gfm/unnamed-chunk-10-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-10-2.png" width="49%" />
 
 ## You can specify the specific layer, with the `index = n` argument
 
@@ -500,7 +511,7 @@ ggplot(data = cars) +
 last_plot_wipe(index = 1)  # removes rug
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-10-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-10-2.png" width="49%" />
+<img src="README_files/figure-gfm/unnamed-chunk-11-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-11-2.png" width="49%" />
 
 ## You can also use it for backtracking - removing the most recent layer with `last_plot_wipe_last()`.
 
@@ -518,7 +529,7 @@ last_plot_wipe_last()
 last_plot_wipe_last()
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-11-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-11-2.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-11-3.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-11-4.png" width="49%" />
+<img src="README_files/figure-gfm/unnamed-chunk-12-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-12-2.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-12-3.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-12-4.png" width="49%" />
 
 # Curious about implementation? Details about building these functions
 
@@ -533,7 +544,7 @@ base_specifiction +
   geom_bar() 
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
 
@@ -541,7 +552,7 @@ base_specifiction +
   geom_bar(position = "fill")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
 
 ``` r
 
@@ -553,7 +564,7 @@ p <- mtcars %>%
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-12-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
 
 ``` r
 
@@ -589,7 +600,7 @@ r$layers
 r
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-12-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-4.png)<!-- -->
 
 ``` r
 
@@ -618,7 +629,7 @@ p <- mtcars %>%
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
 
@@ -627,7 +638,7 @@ p$layers[[2]] <- NULL # removes second layer specification
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
 
 # put it in a function: `last_plot_wipe`
 
@@ -662,7 +673,7 @@ mtcars %>%
   geom_bar()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 
@@ -670,7 +681,7 @@ last_plot_wipe() +
   geom_bar(position = "fill")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
 
 ``` r
 
@@ -683,14 +694,14 @@ mtcars %>%
   stat_count(geom = "label", aes(label = after_stat(count)))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->
 
 ``` r
 
 last_plot_wipe(index = 2)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-4.png)<!-- -->
 
 # A convenience function, last_plot_wipe_last
 
@@ -729,14 +740,14 @@ mtcars %>%
   stat_count(geom = "label", aes(label = after_stat(count)))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 
 last_plot_wipe_last()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
 
 # Other work
 
@@ -763,11 +774,11 @@ knitr::knit_code$get() |> names()
 #>  [4] "unnamed-chunk-4"     "unnamed-chunk-5"     "unnamed-chunk-6"    
 #>  [7] "unnamed-chunk-7"     "unnamed-chunk-8"     "unnamed-chunk-9"    
 #> [10] "unnamed-chunk-10"    "unnamed-chunk-11"    "unnamed-chunk-12"   
-#> [13] "unnamed-chunk-13"    "last_plot_wipe"      "unnamed-chunk-14"   
-#> [16] "last_plot_wipe_last" "unnamed-chunk-15"    "unnamed-chunk-16"   
+#> [13] "unnamed-chunk-13"    "unnamed-chunk-14"    "last_plot_wipe"     
+#> [16] "unnamed-chunk-15"    "last_plot_wipe_last" "unnamed-chunk-16"   
 #> [19] "unnamed-chunk-17"    "unnamed-chunk-18"    "unnamed-chunk-19"   
 #> [22] "unnamed-chunk-20"    "unnamed-chunk-21"    "unnamed-chunk-22"   
-#> [25] "unnamed-chunk-23"
+#> [25] "unnamed-chunk-23"    "unnamed-chunk-24"
 ```
 
 ``` r

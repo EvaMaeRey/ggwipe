@@ -137,8 +137,16 @@ ggplot_add.data_mutate <- function(object, plot, object_name) {
                             .by = !! object$by_specification)
   
     message("New variable named '.value' created")
+    
 
+    if(object$var_name %in% names(new_data)){
+      
+      new_data[,object$var_name] <- new_data$.value
+      
+      new_data <- new_data %>% select(-.value)
+    }else{
     names(new_data)[names(new_data) == ".value"] <- object$var_name
+    }
     
     
   plot$data <- new_data
@@ -146,6 +154,33 @@ ggplot_add.data_mutate <- function(object, plot, object_name) {
 
   
 }
+
+
+drob_funs %>% 
+  ggplot() + 
+  aes(id = paste(pkgs, funs)) + 
+  ggcirclepack::geom_circlepack() + 
+  ggcirclepack::geom_circlepack_text(aes(label = funs)) + 
+  coord_equal() +
+  aes(fill = pkgs) + 
+  guides(fill = "none")
+
+last_plot() +
+  data_mutate(.value = n(), 
+              .by = c(funs, pkgs), 
+              var_name = "num"
+              ) 
+
+last_plot() +
+  data_filter(num >= 200)
+
+last_plot() +
+  data_mutate(.value = case_when(funs == "ggplot" ~ "hello!",
+                                     .default = funs), 
+              var_name = "funs")
+```
+
+```{r}
 
 
 data_var_update <- function(.value, .by, var_name) {
@@ -173,28 +208,7 @@ ggplot_add.data_var_update <- function(object, plot, object_name) {
   }
 
 
-drob_funs %>% 
-  ggplot() + 
-  aes(id = paste(funs, pkgs)) + 
-  ggcirclepack::geom_circlepack() + 
-  ggcirclepack::geom_circlepack_text(aes(label = funs)) + 
-  coord_equal() +
-  aes(fill = pkgs) + 
-  guides(fill = "none")
 
-last_plot() +
-  data_mutate(.value = n(), 
-              .by = c(funs, pkgs), 
-              var_name = "num"
-              ) 
-
-last_plot() +
-  data_filter(num >= 200)
-
-last_plot() +
-  data_var_update(.value = case_when(funs == "ggplot" ~ "hello!",
-                                     .default = funs), 
-                  var_name = "funs")
 ```
 
 # explore extension exported functions...
