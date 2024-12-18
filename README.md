@@ -155,10 +155,10 @@ ggplot(cars) +
 
 data_replace <- function(data) {
   structure(list(new_data_specification = data), 
-            class = "wipedata")
+            class = "data_replace")
 }
 
-ggplot_add.wipedata <- function(object, plot, object_name) {
+ggplot_add.data_replace <- function(object, plot, object_name) {
   
   plot$data <- object$new_data_specification
   plot
@@ -213,30 +213,57 @@ p +
 
 drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
 
-data_mutate_filter <- function(.value, .by, keep) {
-  structure(list(sum_specification = rlang::enquo(.value),
+
+data_mutate <- function(.value, .by, var_name) {
+  structure(list(value_specification = rlang::enquo(.value),
                  by_specification = rlang::enquo(.by),
-                 keep_specifiction = rlang::enquo(keep)),
-            class = "data_mutatefilter")
+                 var_name_specification = var_name),
+            class = "data_mutate")
   
 }
 
-ggplot_add.data_mutatefilter <- function(object, plot, object_name) {
+ggplot_add.data_mutate <- function(object, plot, object_name) {
 
   
-  new_data <- dplyr::mutate(plot$data, .value =
-                            !! object$sum_specification, 
-                            .by = !! object$by_specification) %>% 
-    dplyr::filter(!! object$keep_specifiction)
+  new_data <- dplyr::mutate(plot$data, 
+                            .value = !! object$value_specification, 
+                            .by = !! object$by_specification)
+  
     message("New variable named '.value' created")
 
+    names(new_data)[names(new_data) == ".value"] <- object$var_name
+    
+    
+  plot$data <- new_data
+  plot
+
+  
+}
+
+
+data_var_update <- function(.value, .by, var_name) {
+  structure(list(value_specification = rlang::enquo(.value),
+                 by_specification = rlang::enquo(.by),
+                 var_name_specification = var_name),
+            class = "data_var_update")
+  
+}
+
+ggplot_add.data_var_update <- function(object, plot, object_name) {
+
+  
+  new_data <- dplyr::mutate(plot$data, 
+                            .value = !! object$value_specification, 
+                            .by = !! object$by_specification)
+  
+  new_data[names(new_data) == object$var_name] <- new_data$.value
+    
+    
   plot$data <- new_data
   plot
 
   
   }
-
-
 
 
 drob_funs %>% 
@@ -254,12 +281,31 @@ drob_funs %>%
 ``` r
 
 last_plot() +
-  data_mutate_filter(.value = n(),       
-                     .by = c(funs, pkgs), 
-                     keep = .value >= 200) 
+  data_mutate(.value = n(), 
+              .by = c(funs, pkgs), 
+              var_name = "num"
+              ) 
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-5-7.png)<!-- -->
+
+``` r
+
+last_plot() +
+  data_filter(num >= 200)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-5-8.png)<!-- -->
+
+``` r
+
+last_plot() +
+  data_var_update(.value = case_when(funs == "ggplot" ~ "hello!",
+                                     .default = funs), 
+                  var_name = "funs")
+```
+
+![](README_files/figure-gfm/unnamed-chunk-5-9.png)<!-- -->
 
 # explore extension exported functions…
 
@@ -277,7 +323,8 @@ ext_exports %>%
   ggcirclepack::geom_circlepack_text() +
   aes(label = after_stat(paste(id, "\n",area))) +
   coord_equal() + 
-  ggchalkboard::theme_chalkboard(base_size = 12) + 
+  theme_classic(ink = alpha("lightyellow",.8),
+                paper = "darkseagreen4") + 
   theme(axis.text = element_blank()) + 
   theme(axis.line = element_blank(),
         axis.ticks = element_blank()) + 
