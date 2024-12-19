@@ -1,6 +1,13 @@
 
 - [build functionality using the ggplot_add extension
   mechanism…](#build-functionality-using-the-ggplot_add-extension-mechanism)
+  - [data_replace()](#data_replace)
+  - [data_filter()](#data_filter)
+  - [data_slice()](#data_slice)
+  - [data_slice_sample()](#data_slice_sample)
+  - [data_arrange()](#data_arrange)
+  - [data_mutate()](#data_mutate)
+  - [last_plot_data()](#last_plot_data)
 - [explore extension exported
   functions…](#explore-extension-exported-functions)
 - [{ggwipe}: print the last plot and remove stat/geom/annotate layers in
@@ -70,89 +77,9 @@
 
 <https://evamaerey.github.io/mytidytuesday/2024-07-10-ggnewdata/ggnewdata.html>
 
-``` r
-data_filter <- function(keep, .by) {
-  structure(list(keep_specification = rlang::enquo(keep), 
-                 by_specification = rlang::enquo(.by)), 
-            class = "wipeobs")
-}
-
-ggplot_add.wipeobs <- function(object, plot, object_name, .by) {
-  
-  new_data <- dplyr::filter(plot$data, 
-                            !! object$keep_specification, 
-                            .by = !! object$by_specification)
-  plot$data <- new_data
-  plot
-
-  }
-```
+### data_replace()
 
 ``` r
-library(tidyverse)
-ggplot(cars) + 
-  aes(dist, speed) + 
-  geom_point(size = 7) + 
-  aes(color = speed) + 
-  scale_color_viridis_c(limits = c(0,26)) + 
-  scale_x_continuous(limits = c(0,125)) +
-  scale_y_continuous(limits = c(0,25))
-```
-
-![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
-
-``` r
-last_plot() + 
-  data_filter(keep = dist > 60)
-```
-
-![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
-
-``` r
-
-tidytitanic::tidy_titanic |>
-  ggplot() + 
-  aes(x = sex) + 
-  geom_bar()
-```
-
-![](README_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
-
-``` r
-
-last_plot() + 
-  data_filter(n() > 500, .by = sex)
-```
-
-![](README_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
-
-``` r
-
-last_plot() + 
-  aes(fill = age) 
-```
-
-![](README_files/figure-gfm/unnamed-chunk-4-4.png)<!-- -->
-
-``` r
-
-last_plot() + 
-  data_filter(n() > 1000, .by = age)
-```
-
-![](README_files/figure-gfm/unnamed-chunk-4-5.png)<!-- -->
-
-``` r
-ggplot(cars) + 
-  aes(dist, speed) + 
-  geom_point(size = 7) + 
-  aes(color = speed)
-```
-
-![](README_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
-
-``` r
-
 data_replace <- function(data) {
   structure(list(new_data_specification = data), 
             class = "data_replace")
@@ -164,10 +91,81 @@ ggplot_add.data_replace <- function(object, plot, object_name) {
   plot
 
   }
+```
 
+``` r
+ggplot(mtcars) + 
+  aes(cyl) + 
+  geom_bar()
+```
+
+![](README_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+``` r
 
 last_plot() + 
-  data_replace(data = cars %>% filter(dist > 50))
+  data_replace(data = mpg)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
+
+### data_filter()
+
+``` r
+data_filter <- function(keep, .by) {
+  structure(list(keep_specification = rlang::enquo(keep), 
+                 by_specification = rlang::enquo(.by)), 
+            class = "filterobs")
+}
+
+ggplot_add.filterobs <- function(object, plot, object_name, .by) {
+  
+  new_data <- dplyr::filter(plot$data, 
+                            !! object$keep_specification, 
+                            .by = !! object$by_specification)
+  plot$data <- new_data
+  plot
+
+}
+```
+
+``` r
+library(ggplot2)
+ggplot(mtcars) + 
+  aes(wt) +
+  geom_density() +
+  aes(color = factor(cyl))
+```
+
+![](README_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+``` r
+
+last_plot() +
+  data_filter(cyl != 4)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
+
+``` r
+drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
+
+drob_funs %>% 
+  ggplot() + 
+  aes(y = funs) + 
+  aes(y = fct_infreq(funs)) +
+  aes(y = fct_infreq(funs) %>% fct_rev()) +
+  geom_bar() 
+```
+
+![](README_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
+
+last_plot() + 
+  data_filter(n() >= 500, 
+              .by = c(funs, pkgs)) +
+  labs(title = "Functions used 500 or more times by @drob")
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
@@ -175,45 +173,103 @@ last_plot() +
 ``` r
 
 
-drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
-
-
-
-drob_funs %>% 
-  ggplot() + 
-  aes(y = funs) + 
-  aes(y = fct_infreq(funs)) +
-  aes(y = fct_infreq(funs) %>% fct_rev()) +
-  geom_bar() ->
-p; p
+last_plot() + 
+  data_filter(pkgs == "ggplot") + 
+  labs(title = "ggplot2 function used 500 or more times by @drob")
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-5-3.png)<!-- -->
 
-``` r
+### data_slice()
 
-p + 
-  data_filter(n() > 500, 
-              .by = funs)
+``` r
+data_slice <- function(keep, .by) {
+  structure(list(keep_specification = rlang::enquo(keep), 
+                 by_specification = rlang::enquo(.by)), 
+            class = "sliceobs")
+}
+
+ggplot_add.sliceobs <- function(object, plot, object_name, .by) {
+  
+  new_data <- dplyr::slice(plot$data, 
+                            !! object$keep_specification, 
+                            .by = !! object$by_specification)
+  plot$data <- new_data
+  plot
+
+  }
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-4.png)<!-- -->
-
 ``` r
-
-p + 
-  data_filter(pkgs == "ggplot")
+library(ggplot2)
+ggplot(mtcars) + 
+  aes(wt, mpg) + 
+  geom_point() + 
+  data_slice(1:5, .by = cyl) + 
+  aes(color = factor(cyl))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-5.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+## data_slice_sample()
+
+``` r
+# data_slice_sample <- function(keep, .by) {
+#   structure(list(keep_specification = rlang::enquo(keep), 
+#                  by_specification = rlang::enquo(.by)), 
+#             class = "slicesampleobs")
+# }
+# 
+# ggplot_add.slicesampleobs <- function(object, plot, object_name, .by) {
+#   
+#   new_data <- dplyr::slice_sample(plot$data, ...,
+#                             !! object$keep_specification, 
+#                             .by = !! object$by_specification)
+#   plot$data <- new_data
+#   plot
+# 
+#   }
+```
+
+## data_arrange()
+
+``` r
+data_arrange <- function(arrange) {
+  structure(list(arrange_specification = rlang::enquo(arrange)), 
+            class = "arrangeobs")
+}
+
+ggplot_add.arrangeobs <- function(object, plot, object_name) {
+  
+  new_data <- dplyr::arrange(plot$data, 
+                            !! object$arrange_specification)
+  plot$data <- new_data
+  plot
+
+}
+```
+
+``` r
+library(ggplot2)
+ggplot(mtcars) + 
+  aes(wt, mpg) + 
+  geom_point() + 
+  aes(color = fct_inorder(factor(cyl))) 
+```
+
+![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 
+last_plot() +
+  data_arrange(- cyl)
+```
 
+![](README_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
-drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
+## data_mutate()
 
-
+``` r
 data_mutate <- function(.value, .by, var_name) {
   structure(list(value_specification = rlang::enquo(.value),
                  by_specification = rlang::enquo(.by),
@@ -245,9 +301,123 @@ ggplot_add.data_mutate <- function(object, plot, object_name) {
   plot$data <- new_data
   plot
 
+}
+```
+
+``` r
+library(ggplot2)
+ggplot(mtcars) + 
+  aes(wt, mpg) + 
+  geom_point() + 
+  data_mutate(var = "wt_times_mpg", wt*mpg) + 
+  aes(color = wt_times_mpg)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+## last_plot_data()
+
+``` r
+last_plot_data <- function(){
+  
+  last_plot()$data
   
 }
+```
 
+``` r
+last_plot_data() %>% 
+  select(mpg, cyl, wt, wt_times_mpg)
+#>                      mpg cyl    wt wt_times_mpg
+#> Mazda RX4           21.0   6 2.620      55.0200
+#> Mazda RX4 Wag       21.0   6 2.875      60.3750
+#> Datsun 710          22.8   4 2.320      52.8960
+#> Hornet 4 Drive      21.4   6 3.215      68.8010
+#> Hornet Sportabout   18.7   8 3.440      64.3280
+#> Valiant             18.1   6 3.460      62.6260
+#> Duster 360          14.3   8 3.570      51.0510
+#> Merc 240D           24.4   4 3.190      77.8360
+#> Merc 230            22.8   4 3.150      71.8200
+#> Merc 280            19.2   6 3.440      66.0480
+#> Merc 280C           17.8   6 3.440      61.2320
+#> Merc 450SE          16.4   8 4.070      66.7480
+#> Merc 450SL          17.3   8 3.730      64.5290
+#> Merc 450SLC         15.2   8 3.780      57.4560
+#> Cadillac Fleetwood  10.4   8 5.250      54.6000
+#> Lincoln Continental 10.4   8 5.424      56.4096
+#> Chrysler Imperial   14.7   8 5.345      78.5715
+#> Fiat 128            32.4   4 2.200      71.2800
+#> Honda Civic         30.4   4 1.615      49.0960
+#> Toyota Corolla      33.9   4 1.835      62.2065
+#> Toyota Corona       21.5   4 2.465      52.9975
+#> Dodge Challenger    15.5   8 3.520      54.5600
+#> AMC Javelin         15.2   8 3.435      52.2120
+#> Camaro Z28          13.3   8 3.840      51.0720
+#> Pontiac Firebird    19.2   8 3.845      73.8240
+#> Fiat X1-9           27.3   4 1.935      52.8255
+#> Porsche 914-2       26.0   4 2.140      55.6400
+#> Lotus Europa        30.4   4 1.513      45.9952
+#> Ford Pantera L      15.8   8 3.170      50.0860
+#> Ferrari Dino        19.7   6 2.770      54.5690
+#> Maserati Bora       15.0   8 3.570      53.5500
+#> Volvo 142E          21.4   4 2.780      59.4920
+```
+
+``` r
+library(tidyverse)
+ggplot(cars) + 
+  aes(dist, speed) + 
+  geom_point(size = 7) + 
+  aes(color = speed) + 
+  scale_color_viridis_c(limits = c(0,26)) + 
+  scale_x_continuous(limits = c(0,125)) +
+  scale_y_continuous(limits = c(0,25))
+```
+
+![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+last_plot() + 
+  data_filter(keep = dist > 60)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
+
+tidytitanic::tidy_titanic |>
+  ggplot() + 
+  aes(x = sex) + 
+  geom_bar()
+```
+
+![](README_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+
+``` r
+
+last_plot() + 
+  data_filter(n() > 500, .by = sex)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-12-3.png)<!-- -->
+
+``` r
+
+last_plot() + 
+  aes(fill = age) 
+```
+
+![](README_files/figure-gfm/unnamed-chunk-12-4.png)<!-- -->
+
+``` r
+
+last_plot() + 
+  data_filter(n() > 1000, .by = age)
+```
+
+![](README_files/figure-gfm/unnamed-chunk-12-5.png)<!-- -->
+
+``` r
 
 drob_funs %>% 
   ggplot() + 
@@ -259,7 +429,7 @@ drob_funs %>%
   guides(fill = "none")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-6.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
 
@@ -270,7 +440,7 @@ last_plot() +
               ) 
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-7.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
 
 ``` r
 
@@ -278,7 +448,7 @@ last_plot() +
   data_filter(num >= 200)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-8.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
 
 ``` r
 
@@ -288,7 +458,7 @@ last_plot() +
               var_name = "funs")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-5-9.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-4.png)<!-- -->
 
 ``` r
 
@@ -343,7 +513,7 @@ ext_exports %>%
   labs(title = "Number of exported functions by author")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 
@@ -354,7 +524,7 @@ last_plot() +
   labs(title = "Number of exported functions by function prefix")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
 
 ``` r
 
@@ -364,7 +534,7 @@ last_plot() +
   labs(subtitle = "Subsetting to only at classic extension points")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->
 
 ``` r
 
@@ -373,7 +543,7 @@ last_plot() +
   labs(subtitle = "Subsetting to only classic extension points - number of functions by long prefix ...")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-4.png)<!-- -->
 
 ``` r
   
@@ -386,7 +556,7 @@ last_plot() +
   labs(subtitle = "")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-5.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-5.png)<!-- -->
 
 ``` r
   
@@ -399,7 +569,7 @@ last_plot() +
   facet_wrap(~ prefix)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-7-6.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-6.png)<!-- -->
 
 ``` r
 last_plot() +  
@@ -411,7 +581,7 @@ last_plot() +
   theme(legend.position = "none")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 
@@ -421,7 +591,7 @@ last_plot() +
   theme(legend.position = "top")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
 
 # {ggwipe}: print the last plot and remove stat/geom/annotate layers in one step
 
@@ -460,7 +630,7 @@ last_plot_wipe() +
   labs(tag = "Plot 2")
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-9-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-9-2.png" width="49%" />
+<img src="README_files/figure-gfm/unnamed-chunk-17-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-17-2.png" width="49%" />
 
 ``` r
 mtcars %>% 
@@ -497,7 +667,7 @@ last_plot_wipe() +
 #> Error in plot$scales$clone(): attempt to apply non-function
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-10-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-10-2.png" width="49%" />
+<img src="README_files/figure-gfm/unnamed-chunk-18-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-18-2.png" width="49%" />
 
 ## You can specify the specific layer, with the `index = n` argument
 
@@ -511,7 +681,7 @@ ggplot(data = cars) +
 last_plot_wipe(index = 1)  # removes rug
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-11-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-11-2.png" width="49%" />
+<img src="README_files/figure-gfm/unnamed-chunk-19-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-19-2.png" width="49%" />
 
 ## You can also use it for backtracking - removing the most recent layer with `last_plot_wipe_last()`.
 
@@ -529,7 +699,7 @@ last_plot_wipe_last()
 last_plot_wipe_last()
 ```
 
-<img src="README_files/figure-gfm/unnamed-chunk-12-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-12-2.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-12-3.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-12-4.png" width="49%" />
+<img src="README_files/figure-gfm/unnamed-chunk-20-1.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-20-2.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-20-3.png" width="49%" /><img src="README_files/figure-gfm/unnamed-chunk-20-4.png" width="49%" />
 
 # Curious about implementation? Details about building these functions
 
@@ -544,7 +714,7 @@ base_specifiction +
   geom_bar() 
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 
@@ -552,7 +722,7 @@ base_specifiction +
   geom_bar(position = "fill")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
 
 ``` r
 
@@ -564,7 +734,7 @@ p <- mtcars %>%
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-21-3.png)<!-- -->
 
 ``` r
 
@@ -600,7 +770,7 @@ r$layers
 r
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-13-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-21-4.png)<!-- -->
 
 ``` r
 
@@ -629,7 +799,7 @@ p <- mtcars %>%
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 ``` r
 
@@ -638,7 +808,7 @@ p$layers[[2]] <- NULL # removes second layer specification
 p
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-22-2.png)<!-- -->
 
 # put it in a function: `last_plot_wipe`
 
@@ -673,7 +843,7 @@ mtcars %>%
   geom_bar()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 
@@ -681,7 +851,7 @@ last_plot_wipe() +
   geom_bar(position = "fill")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-2.png)<!-- -->
 
 ``` r
 
@@ -694,14 +864,14 @@ mtcars %>%
   stat_count(geom = "label", aes(label = after_stat(count)))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-3.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-3.png)<!-- -->
 
 ``` r
 
 last_plot_wipe(index = 2)
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-15-4.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-4.png)<!-- -->
 
 # A convenience function, last_plot_wipe_last
 
@@ -740,14 +910,14 @@ mtcars %>%
   stat_count(geom = "label", aes(label = after_stat(count)))
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 ``` r
 
 last_plot_wipe_last()
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-24-2.png)<!-- -->
 
 # Other work
 
@@ -771,14 +941,18 @@ new layer in one step.
 ``` r
 knitr::knit_code$get() |> names()
 #>  [1] "unnamed-chunk-1"     "unnamed-chunk-2"     "unnamed-chunk-3"    
-#>  [4] "unnamed-chunk-4"     "unnamed-chunk-5"     "unnamed-chunk-6"    
-#>  [7] "unnamed-chunk-7"     "unnamed-chunk-8"     "unnamed-chunk-9"    
-#> [10] "unnamed-chunk-10"    "unnamed-chunk-11"    "unnamed-chunk-12"   
-#> [13] "unnamed-chunk-13"    "unnamed-chunk-14"    "last_plot_wipe"     
-#> [16] "unnamed-chunk-15"    "last_plot_wipe_last" "unnamed-chunk-16"   
-#> [19] "unnamed-chunk-17"    "unnamed-chunk-18"    "unnamed-chunk-19"   
-#> [22] "unnamed-chunk-20"    "unnamed-chunk-21"    "unnamed-chunk-22"   
-#> [25] "unnamed-chunk-23"    "unnamed-chunk-24"
+#>  [4] "data_filter"         "unnamed-chunk-4"     "unnamed-chunk-5"    
+#>  [7] "data_slice"          "unnamed-chunk-6"     "data_slice_sample"  
+#> [10] "data_arrange"        "unnamed-chunk-7"     "unnamed-chunk-8"    
+#> [13] "unnamed-chunk-9"     "last_plot_data"      "unnamed-chunk-10"   
+#> [16] "unnamed-chunk-11"    "unnamed-chunk-12"    "unnamed-chunk-13"   
+#> [19] "unnamed-chunk-14"    "unnamed-chunk-15"    "unnamed-chunk-16"   
+#> [22] "unnamed-chunk-17"    "unnamed-chunk-18"    "unnamed-chunk-19"   
+#> [25] "unnamed-chunk-20"    "unnamed-chunk-21"    "unnamed-chunk-22"   
+#> [28] "last_plot_wipe"      "unnamed-chunk-23"    "last_plot_wipe_last"
+#> [31] "unnamed-chunk-24"    "unnamed-chunk-25"    "unnamed-chunk-26"   
+#> [34] "unnamed-chunk-27"    "unnamed-chunk-28"    "unnamed-chunk-29"   
+#> [37] "unnamed-chunk-30"    "unnamed-chunk-31"    "unnamed-chunk-32"
 ```
 
 ``` r

@@ -22,16 +22,44 @@ ggplot2::theme_set(theme_gray(base_size = 18))
 
 https://evamaerey.github.io/mytidytuesday/2024-07-10-ggnewdata/ggnewdata.html
 
+### data_replace()
+
+```{r}
+data_replace <- function(data) {
+  structure(list(new_data_specification = data), 
+            class = "data_replace")
+}
+
+ggplot_add.data_replace <- function(object, plot, object_name) {
+  
+  plot$data <- object$new_data_specification
+  plot
+
+  }
+```
+
 
 
 ```{r}
+ggplot(mtcars) + 
+  aes(cyl) + 
+  geom_bar()
+
+last_plot() + 
+  data_replace(data = mpg)
+```
+
+
+### data_filter()
+
+```{r data_filter}
 data_filter <- function(keep, .by) {
   structure(list(keep_specification = rlang::enquo(keep), 
                  by_specification = rlang::enquo(.by)), 
-            class = "wipeobs")
+            class = "filterobs")
 }
 
-ggplot_add.wipeobs <- function(object, plot, object_name, .by) {
+ggplot_add.filterobs <- function(object, plot, object_name, .by) {
   
   new_data <- dplyr::filter(plot$data, 
                             !! object$keep_specification, 
@@ -39,8 +67,188 @@ ggplot_add.wipeobs <- function(object, plot, object_name, .by) {
   plot$data <- new_data
   plot
 
+}
+```
+
+```{r}
+library(ggplot2)
+ggplot(mtcars) + 
+  aes(wt) +
+  geom_density() +
+  aes(color = factor(cyl))
+
+last_plot() +
+  data_filter(cyl != 4)
+```
+
+```{r}
+drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
+
+drob_funs %>% 
+  ggplot() + 
+  aes(y = funs) + 
+  aes(y = fct_infreq(funs)) +
+  aes(y = fct_infreq(funs) %>% fct_rev()) +
+  geom_bar() 
+
+last_plot() + 
+  data_filter(n() >= 500, 
+              .by = c(funs, pkgs)) +
+  labs(title = "Functions used 500 or more times by @drob")
+
+
+last_plot() + 
+  data_filter(pkgs == "ggplot") + 
+  labs(title = "ggplot2 function used 500 or more times by @drob")
+
+```
+
+
+### data_slice()
+
+
+```{r data_slice}
+data_slice <- function(keep, .by) {
+  structure(list(keep_specification = rlang::enquo(keep), 
+                 by_specification = rlang::enquo(.by)), 
+            class = "sliceobs")
+}
+
+ggplot_add.sliceobs <- function(object, plot, object_name, .by) {
+  
+  new_data <- dplyr::slice(plot$data, 
+                            !! object$keep_specification, 
+                            .by = !! object$by_specification)
+  plot$data <- new_data
+  plot
+
   }
 ```
+
+```{r}
+library(ggplot2)
+ggplot(mtcars) + 
+  aes(wt, mpg) + 
+  geom_point() + 
+  data_slice(1:5, .by = cyl) + 
+  aes(color = factor(cyl))
+```
+
+## data_slice_sample()
+
+```{r data_slice_sample}
+# data_slice_sample <- function(keep, .by) {
+#   structure(list(keep_specification = rlang::enquo(keep), 
+#                  by_specification = rlang::enquo(.by)), 
+#             class = "slicesampleobs")
+# }
+# 
+# ggplot_add.slicesampleobs <- function(object, plot, object_name, .by) {
+#   
+#   new_data <- dplyr::slice_sample(plot$data, ...,
+#                             !! object$keep_specification, 
+#                             .by = !! object$by_specification)
+#   plot$data <- new_data
+#   plot
+# 
+#   }
+```
+
+
+
+
+
+## data_arrange()
+
+```{r data_arrange}
+data_arrange <- function(arrange) {
+  structure(list(arrange_specification = rlang::enquo(arrange)), 
+            class = "arrangeobs")
+}
+
+ggplot_add.arrangeobs <- function(object, plot, object_name) {
+  
+  new_data <- dplyr::arrange(plot$data, 
+                            !! object$arrange_specification)
+  plot$data <- new_data
+  plot
+
+}
+```
+
+```{r}
+library(ggplot2)
+ggplot(mtcars) + 
+  aes(wt, mpg) + 
+  geom_point() + 
+  aes(color = fct_inorder(factor(cyl))) 
+
+last_plot() +
+  data_arrange(- cyl)
+```
+
+## data_mutate()
+
+```{r}
+data_mutate <- function(.value, .by, var_name) {
+  structure(list(value_specification = rlang::enquo(.value),
+                 by_specification = rlang::enquo(.by),
+                 var_name_specification = var_name),
+            class = "data_mutate")
+  
+}
+
+ggplot_add.data_mutate <- function(object, plot, object_name) {
+
+  
+  new_data <- dplyr::mutate(plot$data, 
+                            .value = !! object$value_specification, 
+                            .by = !! object$by_specification)
+  
+    message("New variable named '.value' created")
+    
+
+    if(object$var_name %in% names(new_data)){
+      
+      new_data[,object$var_name] <- new_data$.value
+      
+      new_data <- new_data %>% select(-.value)
+    }else{
+    names(new_data)[names(new_data) == ".value"] <- object$var_name
+    }
+    
+    
+  plot$data <- new_data
+  plot
+
+}
+```
+
+```{r}
+library(ggplot2)
+ggplot(mtcars) + 
+  aes(wt, mpg) + 
+  geom_point() + 
+  data_mutate(var = "wt_times_mpg", wt*mpg) + 
+  aes(color = wt_times_mpg)
+```
+
+## last_plot_data()
+
+```{r last_plot_data}
+last_plot_data <- function(){
+  
+  last_plot()$data
+  
+}
+```
+
+
+```{r}
+last_plot_data() %>% 
+  select(mpg, cyl, wt, wt_times_mpg)
+```
+
 
 ```{r}
 library(tidyverse)
@@ -74,87 +282,13 @@ last_plot() +
 
 
 
+
+
+
+
+
+
 ```{r}
-ggplot(cars) + 
-  aes(dist, speed) + 
-  geom_point(size = 7) + 
-  aes(color = speed)
-
-data_replace <- function(data) {
-  structure(list(new_data_specification = data), 
-            class = "data_replace")
-}
-
-ggplot_add.data_replace <- function(object, plot, object_name) {
-  
-  plot$data <- object$new_data_specification
-  plot
-
-  }
-
-
-last_plot() + 
-  data_replace(data = cars %>% filter(dist > 50))
-
-
-drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
-
-
-
-drob_funs %>% 
-  ggplot() + 
-  aes(y = funs) + 
-  aes(y = fct_infreq(funs)) +
-  aes(y = fct_infreq(funs) %>% fct_rev()) +
-  geom_bar() ->
-p; p
-
-p + 
-  data_filter(n() > 500, 
-              .by = funs)
-
-p + 
-  data_filter(pkgs == "ggplot")
-
-
-
-drob_funs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-07-09/drob_funs.csv')
-
-
-data_mutate <- function(.value, .by, var_name) {
-  structure(list(value_specification = rlang::enquo(.value),
-                 by_specification = rlang::enquo(.by),
-                 var_name_specification = var_name),
-            class = "data_mutate")
-  
-}
-
-ggplot_add.data_mutate <- function(object, plot, object_name) {
-
-  
-  new_data <- dplyr::mutate(plot$data, 
-                            .value = !! object$value_specification, 
-                            .by = !! object$by_specification)
-  
-    message("New variable named '.value' created")
-    
-
-    if(object$var_name %in% names(new_data)){
-      
-      new_data[,object$var_name] <- new_data$.value
-      
-      new_data <- new_data %>% select(-.value)
-    }else{
-    names(new_data)[names(new_data) == ".value"] <- object$var_name
-    }
-    
-    
-  plot$data <- new_data
-  plot
-
-  
-}
-
 
 drob_funs %>% 
   ggplot() + 
@@ -178,6 +312,9 @@ last_plot() +
   data_mutate(.value = case_when(funs == "ggplot" ~ "hello!",
                                      .default = funs), 
               var_name = "funs")
+
+
+
 ```
 
 ```{r}
